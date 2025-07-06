@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
+        Schema::create('inquiries', function (Blueprint $table) {
             $table->id();
-            $table->string('name','50')->unique(); //ユーザー名
-            $table->string('email','254')->unique(); //メールアドレス
-            $table->string('password','255'); //パスワード
+            $table->integer('user_id')->unique(); //ユーザーID
+            $table->integer('instructor_id')->unique(); //講師ID
+            $table->string('category','254')->unique(); //項目
+            $table->string('content','500')->unique(); //本文
+            $table->string('status','20'); //ステータス
+            $table->integer('reply'); //返信
             $table->timestamps(); //created_atとupdated_at
             $table->softDeletes(); //deleted_at
-            
         });
     }
 
@@ -27,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
+        Schema::dropIfExists('inquiries');
     }
 };
