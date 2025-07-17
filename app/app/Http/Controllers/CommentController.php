@@ -59,6 +59,23 @@ class CommentController extends Controller
         return view('comments.show',compact('comment'));
     }
 
+    public function reply(Request $request, Comment $comment)
+    {
+    $request->validate([
+        'content' => 'required|string|max:1000',
+    ]);
+
+    $comment->replies()->create([
+        'user_id' => Auth::id(),
+        'instructor_id' => Auth::user()->is_instructor ? Auth::id() : null,
+        'article_id' => $comment->article_id,
+        'content' => $request->content,
+        'reply' => $comment->id, 
+    ]);
+
+    return back()->with('success', '返信を投稿しました。');
+    }
+
     /**
      * Show the form for editing the specified resource.
      */
