@@ -38,7 +38,7 @@ class NotificationController extends Controller
     {
         $request->validate([
            'title' => 'required|max:254',
-           'body' => 'required|max:255',
+           'body' => 'required|max:500',
            'user_id' => 'required|exists:users,id',
            'instructor_id' => 'required|exists:instructors,id',
            'admin_id' => 'required|exists:admins,id',          
