@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Instructor;
+use Illuminate\Support\Facades\Auth;
 
 
 class RegisterController extends Controller
@@ -24,6 +25,7 @@ class RegisterController extends Controller
         'password' => 'required|confirmed|min:8',
         'face_type' => 'nullable|string',
         'personal_color' => 'nullable|string',
+        'role' => 'required|in:一般,メイク講師',
     ]);
 
     return view('auth.confirm', ['input' => $validated]);
@@ -41,10 +43,11 @@ public function back(Request $request)
 
         if ($data['role'] === 'メイク講師') {
             Instructor::create($data);
+            return redirect()->route('login.instructor')->with('message', '登録が完了しました!');
         } else {
             User::create($data);
+             return redirect()->route('login.user')->with('message', '登録が完了しました!');
         }
 
-        return redirect()->route('auth.passwords.login')->with('message', '登録が完了しました!');
     }
 }
