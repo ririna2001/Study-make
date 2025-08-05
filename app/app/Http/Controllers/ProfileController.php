@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Profile;
 use App\Models\FaceType;
 use App\Models\PersonalColor;
+use App\Models\User;
 
 class ProfileController extends Controller
 {
@@ -18,7 +19,7 @@ class ProfileController extends Controller
     public function index()
     {
         $profile = Auth::user() -> profile;
-        return view('profiles,index',compact('profile'));
+        return view('profile.index',compact('profile'));
     }
 
     //作成画面表示
@@ -29,7 +30,7 @@ class ProfileController extends Controller
     {
         $faceTypes = FaceType::all();
         $personalColors = PersonalColor::all();
-        return view ('profiles.create',compact('faceTypes','personalColors'));
+        return view ('profile.create',compact('faceTypes','personalColors'));
 
     }
 
@@ -43,6 +44,7 @@ class ProfileController extends Controller
             'age' => 'required|max:10',
             'gender' => 'nullable',
             'occupation' => 'nullable',
+            'email' => 'required|max:255',
             'face_type_id' => 'nullable|exists:face_types_id',
             'pesonal_color_id' => 'nullable|exists:personal_colors_id',
         ]);
@@ -56,7 +58,7 @@ class ProfileController extends Controller
             'pesonal_color_id' => $request -> personal_color_id,
         ]);
 
-        return redirect() -> route('profiles.index') ->with('success','プロフィールを登録しました！');
+        return redirect() -> route('profile.index') ->with('success','プロフィールを登録しました！');
     }
 
     //
@@ -66,7 +68,7 @@ class ProfileController extends Controller
     public function show(string $id)
     {
         $profile = Profile::findOrFail($id);
-        return view('profiles.show',compact('article'));
+        return view('profile.show',compact('profile'));
     }
 
     //編集画面表示
@@ -75,10 +77,12 @@ class ProfileController extends Controller
      */
     public function edit(string $id)
     {
+        $user = User::findOrFail($id);
+        $profile = Profile::findOrFail($id);
         $faceTypes = FaceType::all();
-        $pesonalColors = PersonalColor::all();
+        $personalColors = PersonalColor::all();
 
-        return view('profiles.edit',compact('profiles','faceTypes','personalColors'));
+        return view('profile.edit',compact('profile','faceTypes','personalColors'));
     }
 
     /**
