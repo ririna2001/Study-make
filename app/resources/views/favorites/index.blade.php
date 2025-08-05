@@ -1,10 +1,66 @@
+<head>
+     <meta charset="UTF-8">
+     <title>@yield('title','Studymake')</title>
+     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+
+ <style>
+    .search-box {
+      max-width: 950px;
+      margin: 50px auto;
+      padding: 20px;
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      text-align: center;
+      }
+    
+    .search-row {
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+    gap: 35px;
+    }
+
+    .search-item {
+    min-width: 180px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .search-item label {
+    white-space: nowrap;
+  }
+
+  .search-actions {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 10px;
+
+    
+  }
+
+    .container {
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+
+ </style>
+</head>
+
 @extends('layouts.app')
 
 @section('content')
 <div class="container">
-
-    {{-- タイトル --}}
-    <h2 class="mb-4 text-center">お気に入り記事一覧ページ</h2>
+  <h2 class="mb-4 text-center">お気に入り記事一覧ページ</h2>
+</div>
 
     {{-- フラッシュメッセージ（10秒で消える） --}}
     @if (session('success'))
@@ -14,47 +70,62 @@
     @endif
 
     {{-- 検索・絞り込み --}}
+<div class="search-box">
     <form method="GET" action="{{ route('favorites.index') }}" class="mb-4 border p-3 rounded">
-        <div class="mb-2">
-            <label>キーワード</label>
-            <input type="text" name="keyword" value="{{ request('keyword') }}" class="form-control">
+      <div class="search-row">
+        <div class="search-item">
+           <label for="keyword" class="form-label mr-auto">キーワード：</label>
+           <input type="text" name="keyword" placeholder="キーワード" value="{{ request('keyword') }}">
         </div>
 
-        <div class="mb-2">
-            <label>講師名</label>
-            <input type="text" name="instructor" value="{{ request('instructor') }}" class="form-control">
+        <div class="search-item">
+           <label for="keyword" class="form-label mr-auto">講師名：</label>
+           <input type="text" name="keyword" placeholder="instructor" value="{{ request('instructor') }}">
         </div>
+
+            <br>
+ 
+      <div class="search-row">
+        <div class="search-item">
+          <label class="form-label">投稿日：</label>
+              <input type="date" name="date_from" value="{{ request('date_from') }}">
+              ～
+              <input type="date" name="date_to" value="{{ request('date_to') }}">
+        </div>
+
+        <div class="search-item">
+          <label class="form-label">顔タイプ：</label>
+              <select name="face_type_id">
+                <option value="">選択</option>
+                @foreach ($faceTypes as $faceType)
+                  <option value="{{ $faceType->id }}" {{ request('face_type_id') == $faceType->id ? 'selected' : ''}}>
+                    {{ $faceType->name }}
+                  </option>
+                @endforeach        
+              </select>
+        </div>
+
+        <div class="search-item">
+          <label class="form-label">パーソナルカラー：</label>
+              <select name="personal_color_id">
+                <option value="">選択</option>
+                @foreach ($personalColors as $personalColor)
+                  <option value="{{ $personalColor->id }}" {{ request('personal_color_id') == $personalColor->id ? 'selected' : ''}}>
+                    {{ $personalColor->name }}
+                  </option>
+                @endforeach        
+              </select>
+        </div>
+      </div>
 
         <br>
 
-        <div class="mb-2">
-            <label>投稿日</label><br>
-            <input type="date" name="date_from" value="{{ request('date_from') }}">
-            〜
-            <input type="date" name="date_to" value="{{ request('date_to') }}">
-        </div>
-
-        <div class="mb-2">
-            <label>顔タイプ</label>
-            <select name="face_type" class="form-select">
-                <option value="">選択してください</option>
-            </select>
-        </div>
-
-        <div class="mb-2">
-            <label>パーソナルカラー</label>
-            <select name="personal_color" class="form-select">
-                <option value="">選択してください</option>
-            </select>
-        </div>
-
-        <br>
-
-        <div class="d-flex justify-content-between">
+        <div class="search-actions">
             <a href="{{ route('favorites.index') }}" class="btn btn-secondary">リセット</a>
             <button type="submit" class="btn btn-primary">検索</button>
         </div>
     </form>
+</div>
 
     {{-- 一覧テーブル --}}
     <table class="table table-bordered">
@@ -94,7 +165,7 @@
 
     {{-- 戻るボタン --}}
     <div class="mt-4 text-center">
-        <a href="{{ route('mypage.index') }}" class="btn btn-secondary">←戻る</a>
+        <a href="{{ route('mypage.index') }}" class="btn btn-secondary">戻る</a>
     </div>
 </div>
 
