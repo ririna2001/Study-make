@@ -1,3 +1,33 @@
+<head>
+     <meta charset="UTF-8">
+     <title>@yield('title','Studymake')</title>
+     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+ <style>
+    .filter-box {
+      max-width: 950px;
+      margin: 50px auto;
+      padding: 20px;
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      text-align: center;
+      }
+    
+    .container{
+        max-width: 800px;
+        margin: 50px auto;
+        padding: 20px;
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        text-align: center;
+       }
+
+ </style>
+</head>
+
+
 @extends('layouts.app')
 
 @section('content')
@@ -7,6 +37,11 @@
    @if (session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
+
+    {{-- タイトル --}}
+     <div class="container">
+      　<h2 style="text-align: center;">日記一覧</h2>
+    </div>
 
    {{-- 絞り込み --}}
     <div class="d-flex justify-content-center align-items-center min-vh-100">
@@ -20,11 +55,8 @@
 
             <br>
 
-            キーワード
-            <input type="text" name="keyword" placeholder="キーワード" value="{{ request('keyword') }}">
-
-            <button type="submit" class="btn btn-primary">検索</button>
             <a href="{{ route('diary.index') }}" class="btn btn-secondary">リセット</a>
+            <button type="submit" class="btn btn-primary">検索</button>
           </div>
        </form>
     </div>
@@ -44,14 +76,13 @@
       @endforeach
   </ul>
 
-   <a href="{{ route('mypage.user') }}" class="btn btn-secondary">← 戻る</a>
+   <a href="{{ route('mypage.index') }}" class="btn btn-secondary">戻る</a>
+    <a href="{{ route('diary.create') }}" class="btn btn-secondary">新規作成</a>
 
     {{-- ページネーション --}}
     <div class="pagination mt-4">
-        {{ $articles->links() }}
+        {{ $diaries->links() }}
     </div>
-
-   <a href="{{ route('diary.create') }}" class="btn btn-secondary">新規作成</a>
 
 </div>
 <script>

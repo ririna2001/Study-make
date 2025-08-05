@@ -15,8 +15,8 @@ class DiaryController extends Controller
      */
     public function index()
     {
-        $diaries = Diary::where('user_id',Auth::id())->latest()->get();
-        return view('diaries.index',compact('diaries'));
+        $diaries = Diary::where('user_id',Auth::id())->latest()->paginate();
+        return view('diary.index',compact('diaries'));
     }
 
 
@@ -26,7 +26,7 @@ class DiaryController extends Controller
      */
     public function create()
     {
-        return view('diaries.create');
+        return view('diary.create');
     }
 
     //保存処理
