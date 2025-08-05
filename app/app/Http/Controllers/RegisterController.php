@@ -17,7 +17,7 @@ class RegisterController extends Controller
     public function confirm(Request $request)
 {
     $validated = $request->validate([
-        'name' => 'nullable|string|max:255',
+        'name' => 'required|string|max:255',
         'age' => 'nullable|integer|min:10|max:100',
         'gender' => 'nullable|in:男性,女性',
         'occupation' => 'nullable|string',
@@ -40,14 +40,37 @@ public function back(Request $request)
     {
         $data = $request->except('password_confirmation');
         $data['password'] = bcrypt($data['password']);
+        $data['name'] = $request->input('name');
+
+
+        $profileData = [
+        'age' => $request->input('age'),
+        'gender' => $request->input('gender'),
+        'occupation' => $request->input('occupation'),
+        'face_type' => $request->input('face_type'),
+        'personal_color' => $request->input('personal_color'),
+        
+    ];
 
         if ($data['role'] === 'メイク講師') {
-            Instructor::create($data);
+            $instructor = Instructor::create([
+                    'name' => $data['name'],
+                    'email' => $data['email'],
+                    'password' => $data['password'],
+            ]);
+             $instructor->profile()->create($profileData);
             return redirect()->route('login.instructor')->with('message', '登録が完了しました!');
         } else {
-            User::create($data);
+            $user = User::create([
+                    'name' => $data['name'],
+                    'email' => $data['email'],
+                    'password' => $data['password'],
+            ]);
+            $user->profile()->create($profileData);
              return redirect()->route('login.user')->with('message', '登録が完了しました!');
         }
 
     }
+
+   
 }

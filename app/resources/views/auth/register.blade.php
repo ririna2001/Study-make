@@ -61,7 +61,7 @@
             <label class="form-label mb-0 label-col">■ 名前</label>
           </div>
           <div class="col-md-8">
-            <input type="text" name="name" class="form-control" value="{{ old('name') }}">
+            <input type="text" name="name" class="form-control" value="{{ old('name')}}">
           </div>
        </div>
 
@@ -172,7 +172,7 @@
                     <option value="">選択してください</option>
                     <option value="イエベ春" {{ old('personal_color') == 'イエベ春' ? 'selected' : '' }}>イエベ春</option>
                     <option value="ブルべ夏" {{ old('personal_color') == 'ブルべ夏' ? 'selected' : '' }}>ブルべ夏</option>
-                    <option value="イエベ秋" {{ old('personal_color') == 'イエベ秋' ? 'selected' : '' }}>イエ秋秋</option>
+                    <option value="イエベ秋" {{ old('personal_color') == 'イエベ秋' ? 'selected' : '' }}>イエベ秋</option>
                     <option value="ブルべ冬" {{ old('personal_color') == 'ブルべ冬' ? 'selected' : '' }}>ブルべ冬</option>
                 </select>
             </div>
