@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Instructor;
+use App\Models\FaceType;
+use App\Models\PersonalColor;
 use Illuminate\Support\Facades\Auth;
 
 
@@ -23,10 +25,14 @@ class RegisterController extends Controller
         'occupation' => 'nullable|string',
         'email' => 'required|email|unique:users,email|unique:instructors,email',
         'password' => 'required|confirmed|min:8',
-        'face_type' => 'nullable|string',
-        'personal_color' => 'nullable|string',
+        'face_type_id' => 'nullable|string',
+        'personal_color_id' => 'nullable|string',
         'role' => 'required|in:一般,メイク講師',
     ]);
+
+    $validated['face_type_name'] = FaceType::find($validated['face_type_id'])?->name ?? '（未入力）';
+    $validated['personal_color_name'] = PersonalColor::find($validated['personal_color_id'])?->name ?? '（未入力）';
+
 
     return view('auth.confirm', ['input' => $validated]);
 }
@@ -47,8 +53,8 @@ public function back(Request $request)
         'age' => $request->input('age'),
         'gender' => $request->input('gender'),
         'occupation' => $request->input('occupation'),
-        'face_type' => $request->input('face_type'),
-        'personal_color' => $request->input('personal_color'),
+        'face_type_id' => $request->input('face_type_id'),
+        'personal_color_id' => $request->input('personal_color_id'),
         
     ];
 

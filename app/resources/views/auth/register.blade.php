@@ -148,16 +148,16 @@
                 <label class="form-label mb-0 label-col">■ 顔タイプ（任意）</label>
             </div>
             <div class="col-md-8">
-                <select name="face_type" class="form-select">
+                <select name="face_type_id" class="form-select">
                     <option value="">選択してください</option>
-                    <option value="キュート" {{ old('face_type') == 'キュート' ? 'selected' : '' }}>キュート</option>
-                    <option value="フレッシュ" {{ old('face_type') == 'フレッシュ' ? 'selected' : '' }}>フレッシュ</option>
-                    <option value="アクティブキュート" {{ old('face_type') == 'アクティブキュート' ? 'selected' : '' }}>アクティブキュート</option>
-                    <option value="クールカジュアル" {{ old('face_type') == 'クールカジュアル' ? 'selected' : '' }}>クールカジュアル</option>
-                    <option value="フェミニン" {{ old('face_type') == 'フェミニン' ? 'selected' : '' }}>フェミニン</option>
-                    <option value="ソフトエレガント" {{ old('face_type') == 'ソフトエレガント' ? 'selected' : '' }}>ソフトエレガント</option>
-                    <option value="エレガント" {{ old('face_type') == 'エレガント' ? 'selected' : '' }}>エレガント</option>
-                    <option value="クール" {{ old('face_type') == 'クール' ? 'selected' : '' }}>クール</option>
+                    <option value="1" {{ old('face_type_id') == '1' ? 'selected' : '' }}>キュート</option>
+                    <option value="2" {{ old('face_type_id') == '2' ? 'selected' : '' }}>フレッシュ</option>
+                    <option value="3" {{ old('face_type_id') == '3' ? 'selected' : '' }}>アクティブキュート</option>
+                    <option value="4" {{ old('face_type_id') == '4' ? 'selected' : '' }}>クールカジュアル</option>
+                    <option value="5" {{ old('face_type_id') == '5' ? 'selected' : '' }}>フェミニン</option>
+                    <option value="6" {{ old('face_type_id') == '6' ? 'selected' : '' }}>ソフトエレガント</option>
+                    <option value="7" {{ old('face_type_id') == '7' ? 'selected' : '' }}>エレガント</option>
+                    <option value="8" {{ old('face_type_id') == '8' ? 'selected' : '' }}>クール</option>
                 </select>
             </div>
         </div>
@@ -168,12 +168,12 @@
                 <label class="form-label mb-0 label-col">■ パーソナルカラー（任意）</label>
             </div>
             <div class="col-md-8">
-                <select name="personal_color" class="form-select">
+                <select name="personal_color_id" class="form-select">
                     <option value="">選択してください</option>
-                    <option value="イエベ春" {{ old('personal_color') == 'イエベ春' ? 'selected' : '' }}>イエベ春</option>
-                    <option value="ブルべ夏" {{ old('personal_color') == 'ブルべ夏' ? 'selected' : '' }}>ブルべ夏</option>
-                    <option value="イエベ秋" {{ old('personal_color') == 'イエベ秋' ? 'selected' : '' }}>イエベ秋</option>
-                    <option value="ブルべ冬" {{ old('personal_color') == 'ブルべ冬' ? 'selected' : '' }}>ブルべ冬</option>
+                    <option value="1" {{ old('personal_color_id') == '1' ? 'selected' : '' }}>イエベ春</option>
+                    <option value="2" {{ old('personal_color_id') == '2' ? 'selected' : '' }}>ブルべ夏</option>
+                    <option value="3" {{ old('personal_color_id') == '3' ? 'selected' : '' }}>イエベ秋</option>
+                    <option value="4" {{ old('personal_color_id') == '4' ? 'selected' : '' }}>ブルべ冬</option>
                 </select>
             </div>
         </div>
