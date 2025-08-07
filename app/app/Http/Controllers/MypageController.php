@@ -7,12 +7,16 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\Notification;
 use App\Models\Article;
+use App\Models\Instructor;
+use App\Models\Admin;
 
 class MypageController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
+
+    
     public function index()
     {
 
@@ -36,32 +40,32 @@ class MypageController extends Controller
 
 
     // 一般ユーザーのマイページ
-
     private function userMypage($user)
     {
-        $favorites = $user->favorites()->with('article')->get();
+        $favorites = $user->favorites()->get();
         $diaries = $user->diaries()->latest()->get();
         $profile = $user->profile;
+        $unreadCount = $user->notifications()->whereNull('read_at')->count();
         $notifications = $user->notifications()->latest()->take(10)->get();
 
-        return view('mypage.user', compact('user', 'favorites', 'diaries', 'profile', 'notification'));
+        return view('mypage.user', compact('user', 'favorites', 'diaries', 'profile', 'notifications','unreadCount'));
 
     }
 
 
 
     // メイク講師のマイページ
-
-    private function instructorMypage($user)
-    {
-        $articles = $user->articles()->latest()->get(); // 投稿した記事
+    private function instructorMypage($instructor)
+    {        
+        $articles = $instructor->articles()->with('favorites')->latest()->get(); // 投稿した記事
         $totalFavorites = $articles->sum(function ($article) {
             return $article->favorites->count();
         });
-        $notifications = $user->notifications()->latest()->take(10)->get();
-        $profile = $user->profile;
+        $notifications = $instructor->notifications()->latest()->take(10)->get();
+        $unreadCount = $instructor->unreadNotifications->count(); 
+        $profile = $instructor->profile;
 
-        return view('mypage.instructor', compact('user', 'articles', 'totalFavorites', 'notifications'));
+        return view('mypage.instructor', compact('instructor', 'articles', 'totalFavorites', 'notifications','profile','unreadCount'));
     
     }
 
@@ -69,11 +73,15 @@ class MypageController extends Controller
 
     // 管理者のマイページ
 
-    private function adminMypage($user)
+    private function adminMypage($admin)
     {
         $notifications = Notification::latest()->take(10)->get();
         $userCount = User::count();
+        $instructorCount = Instructor::count();
+        $adminCount = Admin::count(); 
         $monthlyUsers = User::whereMonth('created_at', now()->month)->count();
+        $newRegistrations = User::whereMonth('created_at', now()->month)->count(); 
+        $totalUsers = $userCount + $instructorCount + $adminCount;
 
         // 男女比
         $maleCount = User::where('gender', 'male')->count();
@@ -82,8 +90,7 @@ class MypageController extends Controller
 
         $totalArticles = Article::count();
 
-        return view('mypage.admin', compact('user', 'notifications', 'totalUsers', 'monthlyUsers', 'maleCount', 'femaleCount', 'otherCount', 'totalArticles'));
-
+        return view('mypage.admin', compact('admin', 'notifications', 'userCount', 'instructorCount', 'adminCount', 'totalUsers','monthlyUsers', 'maleCount', 'femaleCount', 'otherCount', 'totalArticles','newRegistrations'));
     }
     }
 
