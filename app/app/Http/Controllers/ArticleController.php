@@ -31,6 +31,7 @@ class ArticleController extends Controller
      */
     public function create()
     {
+ 
         $facetypes = FaceType::all();  
         $personalColors = PersonalColor::all();
 
@@ -75,9 +76,9 @@ class ArticleController extends Controller
 
     $isFavorited = false;
 
-    if (auth()->guard('web')->check()) {
-        $user = auth()->guard('web')->user();
-        $isFavorited = $user->favorites->contains($article->id);
+    if (auth()->guard('user')->check()) {
+        $userId = auth()->guard('user')->id();
+        $isFavorited = $article->favorites()->where('user_id', $userId)->exists();
     }
 
     return view('articles.show', compact('article', 'isFavorited'));
@@ -90,7 +91,11 @@ class ArticleController extends Controller
     public function edit(string $id)
     {
         $article = Article::findOrFail($id);
-        return view('articles.edit',compact('article'));
+
+        $facetypes = FaceType::all();          
+        $personalcolors = PersonalColor::all(); 
+
+        return view('articles.edit',compact('article','facetypes','personalcolors'));
     }
 
     //更新処理
@@ -147,7 +152,7 @@ class ArticleController extends Controller
     }
 
     //ダウンロード
-    public function download($id){
+    public function downloadPdf($id){
         $article = Article::findOrFail($id);
         $pdf = PDF::loadView('articles.pdf', compact('article'));
         $fileName = 'article_' . $article->id . '.pdf';
