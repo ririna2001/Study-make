@@ -80,7 +80,7 @@
 
         <div class="search-item">
            <label for="keyword" class="form-label mr-auto">講師名：</label>
-           <input type="text" name="keyword" placeholder="instructor" value="{{ request('instructor') }}">
+           <input type="text" name="instructor" placeholder="instructor" value="{{ request('instructor') }}">
         </div>
 
             <br>
@@ -141,16 +141,16 @@
             @foreach ($favorites as $index => $favorite)
                 <tr>
                     <td>{{ $index + 1 }}</td>
-                    <td>{{ $favorite->article->title }}</td>
-                    <td>{{ $favorite->article->instructor->name ?? '―' }}</td>
+                    <td>{{ $favorite->title ?? '-' }}</td>
+                    <td>{{ $favorite->instructor->name ?? '-' }}</td>
                     <td class="text-center">
-                    <form method="POST" action="{{ route('favorites.toggle', $article->id) }}">
+                    <form method="POST" action="{{ route('favorites.toggle', $favorite->article->id ?? 0) }}">
                         @csrf
-                        <button type="submit"
+                        <button type="button"
                                 class="btn btn-link p-0 border-0 bg-transparent"
                                 title="お気に入り切り替え">
                             {{-- 好きな表示方法を選択 --}}
-                            @if($isFav)
+                            @if($favorite->is_favorited)
                                 <span style="font-size:1.3rem;">❤️</span>
                             @else
                                 <span style="font-size:1.3rem;">🤍</span>
@@ -162,6 +162,37 @@
         @endforeach
     </tbody>
 </table>
+
+<script>
+  document.querySelectorAll('.favorite-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const articleId = this.dataset.articleId;
+        fetch(`/articles/${articleId}/favorite-toggle`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({})
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('認証エラーなど');
+            return response.json();
+        })
+        .then(data => {
+            alert(data.message);
+            this.innerHTML = data.favorited 
+                ? '<span style="font-size:1.3rem;">❤️</span>'
+                : '<span style="font-size:1.3rem;">🤍</span>';
+        })
+        .catch(error => {
+            alert('エラーが発生しました。ログインしているか確認してください。');
+        });
+    });
+});
+</script>
 
     {{-- 戻るボタン --}}
     <div class="mt-4 text-center">

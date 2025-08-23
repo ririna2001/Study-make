@@ -42,4 +42,5 @@ class FavoriteController extends Controller{
 
     return back()->with('success', $msg);
     }
+    
 }
