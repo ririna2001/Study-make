@@ -1,119 +1,281 @@
 @extends('layouts.app')
 
+@section('head')
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
+ <style>
+
+     body {
+        font-family: 'ipaexg', serif;
+    }
+
+
+    .titlebox{
+        max-width: 800px;
+        margin: 50px auto;
+        padding: 20px;
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        text-align: center;
+       }
+
+    .content{
+       text-align: center;
+    }
+
+   .favorite-btn {
+    font-size: 24px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    transition: color 0.2s ease, transform 0.2s ease;
+    }
+
+   .favorite-btn.active {
+    color: red; 
+    }
+
+    .favorite-btn.inactive {
+    color: #ccc; 
+    }
+
+    .buttonbox{
+    max-width: 370px;
+    margin: 50px auto;
+    padding: 20px;
+        text-align: center;
+    }
+
+    .comment{
+        text-align: center;
+    }
+
+ </style>
+@endsection
+
+
 @section('content')
-<div class="container mt-4">
+<div class="container">
+
+    {{-- フラッシュメッセージ --}}
+    @if (session('success'))
+        <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
 
           {{-- タイトルとお気に入り --}}
           <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="titlebox">
                   <h2>{{ $article->title }}</h2>
+            </div>
 
+            
           {{-- お気に入りボタン --}}
+          @if(auth()->guard('user')->check())
             <form method="POST" action="{{ route('favorites.toggle', $article->id) }}">
               @csrf
-              <button type="submit" class="btn btn-link p-0" style="font-size:10px;">
-                 {!! $isFavorited ? '♥' : '♡' !!}
+              <button type="submit" 
+                   class="favorite-btn {{ $isFavorited ? 'active' : 'inactive' }}">
+                   <i class="{{ $isFavorited ? 'fas fa-heart' : 'far fa-heart' }}"></i>
               </button>
+              <span>{{ $article->favorites_count }}</span>
             </form>
+          @endif
+
+
+          {{-- いいね数表示 --}}
+         @auth('instructor')
+           {{-- 講師の場合は自分の記事だけ --}}
+           @if($article->instructor_id === auth('instructor')->id())
+              <p>{{ $article->favorites_count }}</p>
+           @endif
+          @endauth
+
+         @auth('admin')
+        {{-- 管理者は全記事に表示 --}}
+          <p>{{ $article->favorites_count }}</p>
+         @endauth
+        </div>
+
+     @if(auth()->guard('user')->check())
+         @php
+           $completed = $article->readers->contains(auth()->id());
+        @endphp
+
+        @if(!$completed)
+          <form method="POST" action="{{ route('articles.complete', $article->id) }}">
+            @csrf
+            <button type="submit" class="btn btn-success">修了する</button>
+          </form>
+        @else
+          <span class="text-success">✔ 修了済み</span>
+        @endif
+    @endif
+
+    <br>
+    
+          {{-- 本文・画像 --}}
+          <div class ="content row mb-4">
+                <div class="col mx-auto" style="max-width: 800px;">
+                    <p class="text-start">{{ $article->content }}</p>
+                </div>
+
+                @if($article->image_path)
+                 <div class="col-md-4">
+                       <img src="{{ asset('storage/' . $article->image_path) }}" alt="記事画像" class="img-fluid">
+                 </div>
+                @endif
+
           </div>
 
-          {{-- 本文・画像 --}}
-          <div class ="row mb-4">
-                <div class="col-md-8">
-                    <p>{{ $article->body }}</p>
-                </div>
-                <div class="col-md-4">
-                    @if($article->image_path)
-                       <img src="{{ asset('storage/' . $article->image_path) }}" alt="記事画像" class="img-fluid">
-                    @endif
-                </div>
-          </div>
+          {{-- Youtube --}}
+          @if($article->youtube_video_id)
+             <h4>動画</h4>
+             <iframe width="560" height="315"
+                src="https://www.youtube.com/embed/{{ $article->youtube_video_id }}"
+                frameborder="0" allowfullscreen>
+              </iframe>
+          @endif
 
           {{-- 投稿者プロフィール --}}
           <div class="mb-4 p-3 border rounded bg-light">
              <div class="d-flex align-item-center">
-                  @if($article->user->profile_image)
-                    <img src="{{ asset('storage/' . $article->user->profile_image) }}" alt="プロフィール画像" width="60">
-                  @else
-                    <div style="font-size: 30px;"></div>
-                  @endif
+                  <img src="{{ optional($article->instructor)->profile_image 
+                            ? asset('storage/' . $article->instructor->profile_image) 
+                            : asset('images/default-profile.png') }}" 
+                    alt="プロフィール画像" width="60">
                   <div class="ms-3">
-                    <strong>{{ $article->user->name }}</strong>(メイク講師)<br>
-                    <a href="{{ route('profiles.show',$article->user->id) }}">プロフィールを見る</a>
+                    <strong>{{ optional($article->instructor)->name }}</strong>(メイク講師)<br>
+                    <a href="{{ route('profile.show',optional($article->instructor)->id) }}">プロフィールを見る</a>
                   </div>
                 </div>
             </div>
 
-            {{-- 操作ボタン --}}
-            <div class="mb-4 d-flex gap-3">
-                  <a href="{{ route('articles.index') }}" class="btn btn-secondary"><-戻る</a>
-                  <a href="#comment-form" class="btn btn-primary">コメント</a>
-                  <a href="{{ route('articles.download', $article->id) }}"
-                     class="btn btn-outline-dark" target="_blank" download>ダウンロード</a>
-            </div>
+{{-- 操作ボタン --}}
+<div class="buttonbox mb-4 d-flex gap-3 justify-content-center flex-wrap">
+
+    {{-- 戻るボタン --}}
+    <a href="{{ route('top.index') }}" class="btn btn-secondary custom-btn">戻る</a>
+
+    @if(auth()->guard('admin')->check())
+        {{-- 管理者は戻るボタンのみ --}}
+
+    @elseif(auth()->guard('instructor')->check() && $article->instructor_id === auth('instructor')->id())
+        {{-- 編集ボタン --}}
+        <a href="{{ route('instructor.articles.edit', $article->id) }}" class="btn btn-warning custom-btn">編集</a>
+
+        {{-- 削除ボタン（form） --}}
+        <form action="{{ route('instructor.articles.destroy', $article->id) }}" method="POST"
+              onsubmit="return confirm('本当に削除しますか？');"
+              style="margin: 0;">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="btn btn-danger custom-btn">削除</button>
+        </form>
+
+    @else
+        {{-- コメントボタン --}}
+        <a href="{{ route('comments.create', ['article' => $article->id]) }}" class="btn btn-primary custom-btn">コメント</a>
+
+        {{-- ダウンロードボタン --}}
+        <a href="{{ route('articles.downloadPdf', $article->id) }}"
+           class="btn btn-outline-dark custom-btn">ダウンロード</a>
+    @endif
+
+</div>
+
 
             {{-- コメント一覧 --}}
-           <div class="mb-4">
+           <div class="comment mb-4">
                     <h4>コメント一覧</h4>
             @forelse ($article->comments as $comment)
               <div class="border rounded p-3 mb-3 bg-light">
-               <strong>{{ $comment->nickname }}</strong>
-               @if ($comment->age)
-                   （{{ $comment->age }}歳）
-                @endif
-                @if ($comment->gender)
-                    ・{{ $comment->gender == 'male' ? '男性' : ($comment->gender == 'female' ? '女性' : 'その他') }}
-                @endif
-                 <br>
-                 <p>{{ $comment->content }}</p>
-
-
-           {{-- 返信数リンク（クリックで返信表示） --}}
-            @if ($comment->replies->count() > 0)
-              <a href="javascript:void(0);" onclick="toggleReplies('{{$comment->id}}')">
-                🔽 返信{{ $comment->replies->count() }}件を表示
-              </a>
-           @else
-             <span class="text-muted"></span>
-           @endif
-
-
-        {{-- 返信表示部分（初期は非表示） --}}
-            <div id="replies-{{ $comment->id }}" style="display: none; margin-top: 10px;">
-               @foreach ($comment->replies as $reply)
-                <div class="ms-4 p-2 border-start">
-                    <strong>{{ $reply->nickname }}</strong>
-                    @if ($reply->age)（{{ $reply->age }}歳）@endif
-                    @if ($reply->gender)
-                        ・{{ $reply->gender == 'male' ? '男性' : ($reply->gender == 'female' ? '女性' : 'その他') }}
-                    @endif
-                    <p>{{ $reply->content }}</p>
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <strong>{{ $comment->nickname }}</strong>
+                    @if ($comment->age) （{{ $comment->age }}歳）@endif
+                    @if ($comment->gender) ・{{ $comment->gender == 'male' ? '男性' : ($comment->gender == 'female' ? '女性' : 'その他') }} @endif
                 </div>
-               @endforeach
-           </div>
+                <div class="text-muted" style="font-size: 0.9em;">
+                    {{ $comment->created_at->format('Y/m/d H:i') }}
+                </div>
+            </div>
 
-        {{-- メイク講師の返信フォーム --}}
-        @auth
-            @if(Auth::user()->role === 'メイク講師')
-            <form action="{{ route('comments.reply',$comment->id) }}" method="POST" class="mt-2 ms-4">
-              @csrf
+            {{-- コメント内容 --}}
+            <p class="text-start">{{ $comment->content }}</p>
+
+            {{-- 返信数リンク --}}
+            @if ($comment->replies->count() > 0)
+                <a href="javascript:void(0);" onclick="toggleReplies('{{$comment->id}}')">
+                    🔽 返信{{ $comment->replies->count() }}件を表示
+                </a>
+            @endif
+
+            {{-- 返信表示部分 --}}
+            <div id="replies-{{ $comment->id }}" style="display: none; margin-top: 10px;">
+                @foreach ($comment->replies as $reply)
+                    <div class="ms-4 p-2 border-start">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <div>
+                                <strong>{{ $reply->nickname }}</strong>
+                                @if ($reply->age)（{{ $reply->age }}歳）@endif
+                                @if ($reply->gender) ・{{ $reply->gender == 'male' ? '男性' : ($reply->gender == 'female' ? '女性' : 'その他') }} @endif
+                            </div>
+                            <div class="text-muted" style="font-size: 0.85em;">
+                                {{ $reply->created_at->format('Y/m/d H:i') }}
+                            </div>
+                        </div>
+                        <p>{{ $reply->content }}</p>
+                    </div>
+                @endforeach
+            </div>
+
+            {{-- メイク講師の返信フォーム --}}
+    @auth('instructor') 
+    {{-- ▼ リンク：返信フォームの表示/非表示切り替え --}}
+    <div class="d-flex justify-content-end">
+      <a href="javascript:void(0);" onclick="toggleReplyForm({{ $comment->id }})" id="reply-toggle-{{ $comment->id }}">
+        返信する ▼
+      </a>
+   </div>
+
+    {{-- ▼ フォーム：初期状態は非表示 --}}
+    <div id="reply-form-{{ $comment->id }}" style="display: none;" class="ms-4 mt-2">  
+        <form action="{{ route('instructor.comments.reply',$comment->id) }}" method="POST">
+            @csrf
             <div class="mb-2">
                 <label for="content-{{ $comment->id }}">返信内容</label>
                 <textarea name="content" id="content-{{ $comment->id }}" class="form-control" rows="2" required></textarea>
             </div>
             <button type="submit" class="btn btn-sm btn-primary">返信する</button>
         </form>
-        @endif
-    @endauth
+    </div>
+@endauth
+        </div>
+    @empty
+        <p>まだコメントがありません。</p>
+    @endforelse
 </div>
-  @empty
-    <p>まだコメントがありません。</p>
-  @endforelse
 
-        {{-- JavaScript（返信表示の切り替え） --}}
-        <script>
-           function toggleReplies(commentId) {
-              const repliesDiv = document.getElementById('replies-' + commentId);
-              repliesDiv.style.display = (repliesDiv.style.display === 'none') ? 'block' : 'none';
-            }
-        </script>
+
+
+  {{-- JavaScript（返信表示の切り替え） --}}
+      <script>
+    function toggleReplyForm(commentId) {
+        const form = document.getElementById('reply-form-' + commentId);
+        const toggleLink = document.getElementById('reply-toggle-' + commentId);
+
+        if (!form || !toggleLink) {
+            console.error('Element not found for commentId:', commentId);
+            return;
+        }
+
+        if (form.style.display === 'none') {
+            form.style.display = 'block';
+            toggleLink.textContent = '返信する ▲';
+        } else {
+            form.style.display = 'none';
+            toggleLink.textContent = '返信する ▼';
+        }
+    }
+</script>
 @endsection

@@ -18,11 +18,11 @@ class ArticleController extends Controller
      */
     
      //一覧表示
-    public function index()
+   /* public function index()
     {
         $articles = Article::with('instructor')->latest()->get();
-        return view ('articles.index',compact('articles'));
-    }
+        return view ('instructor.articles.my_articles',compact('articles'));
+    }*/
 
 
     //作成画面表示
@@ -64,33 +64,54 @@ class ArticleController extends Controller
            $article->save();
         }
 
-        return redirect()->route('top.index')->with('success','記事を投稿しました！');
+        return redirect()->route('instructor.top.index')->with('success','記事を投稿しました！');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
-{
-    $article = Article::with('comments')->findOrFail($id);
+   public function show(string $id)
+   {
+    $article = Article::with(['comments.user','faceType','personalColor'])
+                      ->withCount('favorites')
+                      ->findOrFail($id);
 
-    $isFavorited = false;
+    $user = auth()->guard('user')->user();
+    $instructor = auth()->guard('instructor')->user();
+    $admin = auth()->guard('admin')->user();
 
-    if (auth()->guard('user')->check()) {
-        $userId = auth()->guard('user')->id();
-        $isFavorited = $article->favorites()->where('user_id', $userId)->exists();
+    if ($user) {
+        $user->readArticles()->syncWithoutDetaching([$article->id]);
+        $user->load('favorites'); // ここでロード
+
+        $isFavorited = $user->favorites->contains($article->id);
+        $completed = $user->readArticles()->find($article->id)?->pivot->completed ?? false;
+    } else {
+        $isFavorited = false;
+        $completed = false;
     }
 
-    return view('articles.show', compact('article', 'isFavorited'));
+    return view('articles.show', compact('article', 'isFavorited', 'completed', 'instructor', 'admin'));
 }
+
+    public function showInstructor(Article $article)
+   {
+    $instructor = auth()->guard('instructor')->user();
+
+    if ($article->instructor_id !== $instructor->id) {
+        abort(403, 'このページを見る権限がありません。');
+    }
+
+    // 講師用もユーザー用Bladeを共用
+    return view('articles.show', compact('article'));
+   }
 
     //編集画面
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Article $article)
     {
-        $article = Article::findOrFail($id);
 
         $facetypes = FaceType::all();          
         $personalcolors = PersonalColor::all(); 
@@ -147,7 +168,7 @@ class ArticleController extends Controller
 
         $article->save();
 
-        return redirect()->route('articles.index')->with('success','記事を更新しました！');
+        return redirect()->route('instructor.articles.show',['article' => $article->id])->with('success','記事を更新しました！');
 
     }
 
@@ -158,9 +179,32 @@ class ArticleController extends Controller
         $fileName = 'article_' . $article->id . '.pdf';
         
         return $pdf->download($fileName);
-
     }
 
+    //返信
+    public function reply(Request $request, Comment $comment)
+    {
+    if (!auth('instructor')->check()) {
+        return redirect()->route('instructor.login'); 
+
+        $request->validate([
+        'content' => 'required|string|max:500',
+    ]);
+
+    // 返信を作成
+    $reply = new Comment();
+    $reply->content = $request->input('content');
+    $reply->parent_id = $comment->id; // 親コメントID
+    $reply->article_id = $comment->article_id;
+    $reply->instructor_id = auth('instructor')->id(); // 講師のID
+    $reply->nickname = auth('instructor')->user()->name; // 講師の名前
+    
+    $reply->save();
+
+    return redirect()->back()->with('success', '返信を投稿しました。');
+
+    }
+}
 
     //削除
     /**
@@ -172,6 +216,64 @@ class ArticleController extends Controller
         }
 
         $article->delete();
-        return redirect()->route('articles.index')->with('success','記事を削除しました！');
+        return redirect()->route('instructor.top.index')->with('success','記事を削除しました！');
     }
+
+
+    //修了
+    public function complete(Article $article)
+    {
+    $user = auth()->user();
+
+   if ($user) {
+        $user->readArticles()->updateExistingPivot($article->id, ['completed' => true]);
+    }
+
+    return redirect()->back()->with('success', '修了しました！');
+
+    }
+
+    //メイク講師の記事一覧
+  public function my_articles(Request $request)
+{
+
+    $query = Article::query();
+
+    // ログイン中の講師の記事に絞る
+    $query->where('instructor_id', auth()->id());
+
+    // キーワード検索
+    if ($keyword = $request->input('keyword')) {
+        $query->where('title', 'like', "%{$keyword}%");
+    }
+
+    // 投稿日の範囲検索
+    if ($dateFrom = $request->input('date_from')) {
+        $query->whereDate('created_at', '>=', $dateFrom);
+    }
+    if ($dateTo = $request->input('date_to')) {
+        $query->whereDate('created_at', '<=', $dateTo);
+    }
+
+    // 顔タイプで絞り込み
+    if ($faceTypeId = $request->input('face_type_id')) {
+        $query->where('face_type_id', $faceTypeId);
+    }
+
+    // パーソナルカラーで絞り込み
+    if ($personalColorId = $request->input('personal_color_id')) {
+        $query->where('personal_color_id', $personalColorId);
+    }
+
+    // 並び順とページネーション
+    $articles = $query->orderBy('created_at', 'desc')
+                      ->paginate(10);            
+
+    // 顔タイプとパーソナルカラーを取得（フォーム用）
+    $faceTypes = FaceType::all();
+    $personalColors = PersonalColor::all();
+
+    return view('instructor.articles.my_articles', compact('articles', 'faceTypes', 'personalColors'));
+
+}
 }
