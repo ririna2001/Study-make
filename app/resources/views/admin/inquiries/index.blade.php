@@ -1,4 +1,4 @@
-@entends('layouts.admin')
+@extends('layouts.app')
 
 @section('content')
 <div class="container">
@@ -56,7 +56,7 @@
          @forelse ($inquiries as $inquiry)
                 <tr>
                     <td>
-                       <a href="{{ route('admin.inquiries.show', $inquiries->id) }}"></a>
+                       <a href="{{ route('admin.inquiries.show', $inquiries->id) }}">
                          {{ $inquiry->id }}
                        </a>
                     </td>

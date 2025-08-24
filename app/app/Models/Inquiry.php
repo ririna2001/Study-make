@@ -16,6 +16,9 @@ class Inquiry extends Model
         'content',
         'status',
         'reply',
+        'keyword',
+        'date',
+        'title',
     ];
 
      //ユーザー

@@ -14,8 +14,9 @@ class InquiryController extends Controller
      */
     public function index()
     {
+        dd(Auth::guard('admin')->check(), Auth::guard('admin')->id());
         $inquiries = Inquiry::latest()->get();
-        return view('Inquiries.index',compact('inquiries'));
+        return view('admn.Inquiries.index',compact('inquiries'));
     }
 
     /**
@@ -23,7 +24,7 @@ class InquiryController extends Controller
      */
     public function create()
     {
-        return view('inquiries.create');
+        return view('inquiry.create');
     }
 
     /**
@@ -32,20 +33,33 @@ class InquiryController extends Controller
     public function store(Request $request)
     {
         $request -> validate([
+           'name' => 'required|max:255',
+           'email' => 'required|email|max:255',
            'category' => 'required|max:254',
-           'content' => 'required|max:255',
-           'status' => 'required|max:20',
+           'content' => 'required|max:500',
            'parent_id' => 'nullable|exists:inquiries,id',
         ]);
 
+        $userId = auth()->guard('user')->check() ? auth()->id() : null;
+        $instructorId = auth()->guard('instructor')->check() ? auth()->guard('instructor')->id() : null;
+
         Inquiry::create([
+            'name' => $request->name,
+            'email' => $request->email,
             'category' => $request->category,
             'content' => $request->content,
-            'status' => $request->status,
-            'parent_id' => $request->parent_id,
+            'status' => '未対応',
+            'parent_id' => $request->parent_id ?? null,
+            'user_id' => $userId,
+            'instructor_id' => $instructorId,
         ]);
+        
+    if ($instructorId) {
+        return redirect()->route('instructor.top.index')->with('success', '問い合わせを送信しました！');
+    } else {
+        return redirect()->route('top.index')->with('success', '問い合わせを送信しました！');
+    }
 
-        return redirect()->route('inquiries.index')->with('success','問い合わせを送信しました！');
     }
 
     /**
@@ -54,7 +68,20 @@ class InquiryController extends Controller
     public function show(string $id)
     {
         $inquiry = Inquiry::findOrFail($id);
-        return view('inquiries.show',compact('inquiry'));
+        return view('inquiry.show',compact('inquiry'));
+    }
+
+    public function confirm(Request $request)
+    {
+        $request->validate([
+          'name' => 'required|max:255',
+          'email' => 'required|email',
+          'category' => 'required|max:254',
+          'content' => 'required|max:255',
+        ]);
+
+    // 入力内容をビューに渡す（確認画面）
+        return view('inquiry.confirm', ['inputs' => $request->all(),]);
     }
 
     /**
@@ -76,9 +103,9 @@ class InquiryController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function delete(string $id)
     {
          $inquiry = Inquiry::findOrFail($id);
-         return redirect()->route('inquiries.index')->with('success','問い合わせを削除しました');
+         return redirect()->route('inquiry.index')->with('success','問い合わせを削除しました');
     }
 }
