@@ -154,7 +154,14 @@
 <div class="buttonbox mb-4 d-flex gap-3 justify-content-center flex-wrap">
 
     {{-- 戻るボタン --}}
-    <a href="{{ route('top.index') }}" class="btn btn-secondary custom-btn">戻る</a>
+     @if(Auth::guard('admin')->check())
+       <a href="{{ route('admin.top.index') }}" class="btn btn-secondary custom-btn">戻る</a>
+      @elseif(Auth::guard('instructor')->check())
+       <a href="{{ route('instructor.top.index') }}" class="btn btn-secondary custom-btn">戻る</a>
+      @else
+       <a href="{{ route('top.index') }}" class="btn btn-secondary custom-btn">戻る</a>
+     @endif
+
 
     @if(auth()->guard('admin')->check())
         {{-- 管理者は戻るボタンのみ --}}
@@ -172,7 +179,7 @@
             <button type="submit" class="btn btn-danger custom-btn">削除</button>
         </form>
 
-    @else
+    @elseif(auth()->guard('user')->check())
         {{-- コメントボタン --}}
         <a href="{{ route('comments.create', ['article' => $article->id]) }}" class="btn btn-primary custom-btn">コメント</a>
 
@@ -231,8 +238,8 @@
 
             {{-- メイク講師の返信フォーム --}}
     @auth('instructor') 
-    {{-- ▼ リンク：返信フォームの表示/非表示切り替え --}}
-    <div class="d-flex justify-content-end">
+     @if($article->instructor_id === auth('instructor')->id())
+     <div class="d-flex justify-content-end">
       <a href="javascript:void(0);" onclick="toggleReplyForm({{ $comment->id }})" id="reply-toggle-{{ $comment->id }}">
         返信する ▼
       </a>
@@ -249,8 +256,9 @@
             <button type="submit" class="btn btn-sm btn-primary">返信する</button>
         </form>
     </div>
-@endauth
-        </div>
+    @endif
+   @endauth
+</div>
     @empty
         <p>まだコメントがありません。</p>
     @endforelse
