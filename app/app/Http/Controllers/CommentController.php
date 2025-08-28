@@ -22,10 +22,10 @@ class CommentController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create($articleId)
     {
-        $articles = Article::all();
-        return view('comments.create',compact('articles'));
+        $article = Article::findOrFail($articleId);
+        return view('comments.create',compact('article'));
     }
 
     /**
@@ -34,12 +34,14 @@ class CommentController extends Controller
     public function store(Request $request)
     {
         $request -> validate([
+            'nickname' => 'required|string|max:50',
             'content' => 'required|max:500',
             'article_id' => 'required|exists:articles,id',
             'parent_id' => 'nullable|exists:comments,id',
         ]);
 
         Comment::create([
+            'nickname' => $request->nickname,
             'content' => $request->content,
             'article_id' => $request->article_id,
             'user_id' => Auth::id(),
@@ -59,22 +61,34 @@ class CommentController extends Controller
         return view('comments.show',compact('comment'));
     }
 
-    public function reply(Request $request, Comment $comment)
+    public function reply(Request $request, $commentId)
     {
-    $request->validate([
-        'content' => 'required|string|max:1000',
-    ]);
+    $comment = Comment::findOrFail($commentId);
+    $article = $comment->article;
 
-    $comment->replies()->create([
-        'user_id' => Auth::id(),
-        'instructor_id' => Auth::user()->is_instructor ? Auth::id() : null,
-        'article_id' => $comment->article_id,
-        'content' => $request->content,
-        'reply' => $comment->id, 
-    ]);
-
-    return back()->with('success', '返信を投稿しました。');
+    // ★ 自分が投稿した記事でなければ403
+    if (Auth::guard('instructor')->id() !== $article->instructor_id) {
+        abort(403, 'この記事の投稿者のみ返信できます');
     }
+
+    $request->validate([
+        'content' => 'required|string|max:500',
+    ]);
+
+    $reply = new Comment([
+        'content' => $request->content,
+        'nickname' => Auth::guard('instructor')->user()->name,
+        'parent_id' => $comment->id,
+        'instructor_id'   => Auth::guard('instructor')->id(),  // ★ 講師のIDを入れる
+        'article_id'=> $article->id,      
+    ]);
+
+    $reply->article_id = $article->id;
+    $reply->save();
+
+    return back()->with('success', '返信をしました！');
+    }
+  
 
     /**
      * Show the form for editing the specified resource.
@@ -95,12 +109,24 @@ class CommentController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Comment $comment)
     {
-        $comment = Comment::findOrFail($id);
-        $comment -> delete();
 
-        return redirect()->route('articles.show', $comment->article_id)->with('success','コメントを削除しました');
+        $user = auth()->user();
+        $instructor = auth()->guard('instructor')->user();
 
-    }
+       if (
+          ($user && $comment->user_id === $user->id) ||
+          ($instructor && $comment->article->instructor_id === $instructor->id)
+        ) {
+          $comment->delete();
+          return back()->with('success', 'コメントを削除しました。');
+        }
+
+    abort(403, '権限がありません。');
 }
+}
+
+
+
+

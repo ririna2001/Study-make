@@ -15,6 +15,8 @@ class Comment extends Model
         'article_id',
         'content',
         'reply',
+        'nickname',
+        'parent_id',
     ];
 
     //ユーザー
@@ -27,12 +29,21 @@ class Comment extends Model
         return $this->belongsTo(Instructor::class);
     }
 
+     public function scopeParentComment($query){
+        return $query->whereNull('parent_id');
+    }
+
+
     public function parent(){
-        return $this->belongsTo(Comment::class, 'reply');
+        return $this->belongsTo(Comment::class, 'parent_id');
     }
 
     public function replies(){
-        return $this->hasMany(Comment::class, 'reply');
+        return $this->hasMany(Comment::class, 'parent_id');
+    }
+
+    public function article(){
+    return $this->belongsTo(Article::class);
     }
 
 }

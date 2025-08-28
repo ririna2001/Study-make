@@ -193,38 +193,66 @@
 
             {{-- コメント一覧 --}}
            <div class="comment mb-4">
-                    <h4>コメント一覧</h4>
-            @forelse ($article->comments as $comment)
+                    <h4 class="mb-5">コメント一覧</h4>
+            @forelse ($article->comments()->parentComment()->get() as $comment)
               <div class="border rounded p-3 mb-3 bg-light">
                 <div class="d-flex justify-content-between align-items-start mb-2">
-                <div>
+                 <div>
                     <strong>{{ $comment->nickname }}</strong>
                     @if ($comment->age) （{{ $comment->age }}歳）@endif
                     @if ($comment->gender) ・{{ $comment->gender == 'male' ? '男性' : ($comment->gender == 'female' ? '女性' : 'その他') }} @endif
-                </div>
-                <div class="text-muted" style="font-size: 0.9em;">
+                 </div>
+                 <div class="text-muted" style="font-size: 0.9em;">
                     {{ $comment->created_at->format('Y/m/d H:i') }}
-                </div>
-            </div>
+                 </div>
 
-            {{-- コメント内容 --}}
-            <p class="text-start">{{ $comment->content }}</p>
+                 {{--コメント削除--}}
+                  @php
+                     $user = auth()->guard('user')->check() ? auth()->id() : null;
+                     $instructor = auth()->guard('instructor')->check() ? auth('instructor')->id() : null;
+                  @endphp
+
+                  @if(($user && $comment->user_id === $user) || ($instructor && $comment->article->instructor_id === $instructor))
+                 <form action="{{ $instructor ? route('instructor.comments.destroy', $comment->id) : route('comments.destroy', $comment->id)}}" method="POST" style="display:inline;" onsubmit="return confirm('本当に削除しますか？');">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-link text-danger p-0" style="font-size: 0.9em;">
+                        <i class="fas fa-trash-alt"></i>
+                  </button>
+                 </form>
+                 @endif
+                </div>
+
+                  {{-- コメント内容 --}}
+                  <p class="text-start">{{ $comment->content }}</p>
+
+                  {{-- メイク講師の返信フォーム --}}
+                  @auth('instructor') 
+                  @if($article->instructor_id === auth('instructor')->id())
+                  <div class="d-flex justify-content-end">
+                      <a href="javascript:void(0);" onclick="toggleReplyForm({{ $comment->id }})" id="reply-toggle-{{ $comment->id }}">
+                          返信する ▼
+                        </a>
+                  </div>
+                </div>
 
             {{-- 返信数リンク --}}
             @if ($comment->replies->count() > 0)
-                <a href="javascript:void(0);" onclick="toggleReplies('{{$comment->id}}')">
+             <div class="text-start mt-2">
+                <a href="javascript:void(0);" onclick="toggleReplies('{{$comment->id}}')" class="text-start">
                     🔽 返信{{ $comment->replies->count() }}件を表示
                 </a>
+             </div>
             @endif
-
+            
             {{-- 返信表示部分 --}}
             <div id="replies-{{ $comment->id }}" style="display: none; margin-top: 10px;">
                 @foreach ($comment->replies as $reply)
-                    <div class="ms-4 p-2 border-start">
-                        <div class="d-flex justify-content-between align-items-start mb-1">
-                            <div>
-                                <strong>{{ $reply->nickname }}</strong>
-                                @if ($reply->age)（{{ $reply->age }}歳）@endif
+                <div class="ms-4 p-2 border-start">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <div>
+                            <strong>{{ $reply->nickname }}</strong>
+                            @if ($reply->age)（{{ $reply->age }}歳）@endif
                                 @if ($reply->gender) ・{{ $reply->gender == 'male' ? '男性' : ($reply->gender == 'female' ? '女性' : 'その他') }} @endif
                             </div>
                             <div class="text-muted" style="font-size: 0.85em;">
@@ -236,14 +264,6 @@
                 @endforeach
             </div>
 
-            {{-- メイク講師の返信フォーム --}}
-    @auth('instructor') 
-     @if($article->instructor_id === auth('instructor')->id())
-     <div class="d-flex justify-content-end">
-      <a href="javascript:void(0);" onclick="toggleReplyForm({{ $comment->id }})" id="reply-toggle-{{ $comment->id }}">
-        返信する ▼
-      </a>
-   </div>
 
     {{-- ▼ フォーム：初期状態は非表示 --}}
     <div id="reply-form-{{ $comment->id }}" style="display: none;" class="ms-4 mt-2">  
@@ -268,22 +288,19 @@
 
   {{-- JavaScript（返信表示の切り替え） --}}
       <script>
-    function toggleReplyForm(commentId) {
-        const form = document.getElementById('reply-form-' + commentId);
-        const toggleLink = document.getElementById('reply-toggle-' + commentId);
-
-        if (!form || !toggleLink) {
-            console.error('Element not found for commentId:', commentId);
-            return;
-        }
-
-        if (form.style.display === 'none') {
-            form.style.display = 'block';
-            toggleLink.textContent = '返信する ▲';
-        } else {
-            form.style.display = 'none';
-            toggleLink.textContent = '返信する ▼';
-        }
+    function toggleReplies(commentId) {
+    const repliesDiv = document.getElementById('replies-' + commentId);
+    if (!repliesDiv) {
+        console.error('Replies div not found for commentId:', commentId);
+        return;
     }
+
+    if (repliesDiv.style.display === 'none') {
+        repliesDiv.style.display = 'block';
+    } else {
+        repliesDiv.style.display = 'none';
+    }
+}
+</script>
 </script>
 @endsection
