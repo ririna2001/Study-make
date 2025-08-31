@@ -139,13 +139,13 @@
           {{-- 投稿者プロフィール --}}
           <div class="mb-4 p-3 border rounded bg-light">
              <div class="d-flex align-item-center">
-                  <img src="{{ optional($article->instructor)->profile_image 
-                            ? asset('storage/' . $article->instructor->profile_image) 
+                  <img src="{{ optional($article->instructor)->image_path 
+                            ? asset('storage/' . $article->instructor->image_path) 
                             : asset('images/default-profile.png') }}" 
-                    alt="プロフィール画像" width="60">
+                    alt="プロフィール画像" width="80">
                   <div class="ms-3">
                     <strong>{{ optional($article->instructor)->name }}</strong>(メイク講師)<br>
-                    <a href="{{ route('profile.show',optional($article->instructor)->id) }}">プロフィールを見る</a>
+                    <a href="{{ route('instructor.profile.show',['profile' => optional($article->instructor)->profile->id]) }}">プロフィールを見る</a>
                   </div>
                 </div>
             </div>

@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 class AdminLoginController extends Controller
 {
       public function showLoginForm(Request $request){
-        return view('auth.login',['loginRoute' => 'login.admin.submit',
+        return view('admin.login',['loginRoute' => 'login.admin.submit',
     ]);
     }
 
@@ -17,11 +17,11 @@ class AdminLoginController extends Controller
             'password' => 'required'
          ]);
 
-         if(Auth::attempt([
+         if(Auth::guard('admin')->attempt([
              'email' => $request->email,
              'password' => $request->password
          ])){
-            return redirect()->route('top.index');
+            return redirect()->route('admin.top.index');
          }
          
 
