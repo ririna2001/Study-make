@@ -6,11 +6,16 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Inquiry;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use App\Models\InquiryReply;
 
 class AdminInquiryController extends Controller
 {
 
   public function index(Request $request){
+
+    $admin = Auth::guard('admin')->user();
+    
     $query = Inquiry::query();
 
     // キーワード検索（名前・メール）
@@ -42,7 +47,7 @@ class AdminInquiryController extends Controller
   }
 
   public function show($id){
-    $inquiry = Inquiry::findOrFail($id);
+    $inquiry = Inquiry::with('replies')->findOrFail($id);
 
     return view('admin.inquiries.show', compact('inquiry'));
   }
@@ -76,20 +81,25 @@ public function create()
 }
 
 //確認画面
-public function confirm(Request $request)
+public function confirm(Request $request, $id)
 {
     $validated = $request->validate([
         'title' => 'required|string|max:255',
-        'content' => 'required|string',
+        'reply' => 'required|string',
     ]);
 
     $validated['date'] = Carbon::now()->format('Y-m-d');
 
-    return view('admin.inquiries.confirm', $validated);
+     return view('admin.inquiries.reply_confirm', [
+        'title'   => $validated['title'],
+        'reply'   => $validated['reply'],
+        'date'    => Carbon::now()->format('Y-m-d'),
+        'inquiry' => Inquiry::findOrFail($id),
+    ]);
 }
 
 //保存
-public function store(Request $request)
+/*public function store(Request $request)
 {
     $validated = $request->validate([
         'title' => 'required|string|max:255',
@@ -100,7 +110,25 @@ public function store(Request $request)
     Inquiry::create($validated);
 
     return redirect()->route('admin.inquiries.index')->with('success', 'お知らせを作成しました！');
-}
+}*/
 
+//問い合わせ返信
+public function storeReply(Request $request, $inquiryId)
+{    
+    $request->validate(['reply' => 'required|string']);
+
+    $inquiry = Inquiry::findOrFail($inquiryId);
+
+    InquiryReply::create([
+        'inquiry_id' => $inquiryId,
+        'admin_id' => auth('admin')->id(),
+        'user_id' => $inquiry->user_id, 
+        'instructor_id' => $inquiry->instructor_id,
+        'title' => $request->title,
+        'content' => $request->reply,
+    ]);
+
+    return redirect()->route('admin.inquiries.index')->with('success', '返信を送信しました');
+}
 
 }
