@@ -20,7 +20,7 @@ class Favorite extends Model
     }
 
     //記事
-     public function articles(){
-        return $this->belongsTo(Article::class);
+     public function article(){
+        return $this->belongsTo(Article::class, 'article_id');
     }
 }

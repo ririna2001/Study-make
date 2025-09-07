@@ -29,18 +29,24 @@ class FavoriteController extends Controller{
     $user = auth()->user();
 
      if (!$user) {
-        return redirect()->route('login')->withErrors('ログインしてください');
+       return response()->json(['error' => 'ログインしてください'], 401);
     }
 
     if ($user->favorites()->where('article_id', $article->id)->exists()) {
         $user->favorites()->detach($article->id);
-        $msg = 'お気に入りを解除しました';
+        $status = 'removed';
     } else {
         $user->favorites()->attach($article->id);
-        $msg = 'お気に入りに追加しました';
+        $status = 'added';
     }
 
-    return back()->with('success', $msg);
+    $article->loadCount('favorites');
+    $favorites_count = $article->favorites_count;
+
+    return response()->json([
+        'status' => $status,
+        'favorites_count' => $favorites_count
+    ]);
     }
     
 }

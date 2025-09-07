@@ -5,17 +5,13 @@
 
  <style>
 
-     body {
-        font-family: 'ipaexg', serif;
-    }
-
 
     .titlebox{
         max-width: 800px;
         margin: 50px auto;
         padding: 20px;
-        background-color: #f9f9f9;
-        border: 1px solid #ddd;
+        background-color: #ffff;
+        border: 5px solid #ddd;
         text-align: center;
        }
 
@@ -63,22 +59,20 @@
     @endif
 
           {{-- タイトルとお気に入り --}}
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="titlebox">
+      <div class="d-flex align-items-center justify-content-between align-items-center mb-3">
+            <div class="mx-auto text-center titlebox">
                   <h2>{{ $article->title }}</h2>
             </div>
 
             
           {{-- お気に入りボタン --}}
+      <div class="d-flex align-items-center gap-2">
           @if(auth()->guard('user')->check())
-            <form method="POST" action="{{ route('favorites.toggle', $article->id) }}">
               @csrf
-              <button type="submit" 
-                   class="favorite-btn {{ $isFavorited ? 'active' : 'inactive' }}">
+              <button type="button" class="favorite-btn {{ $isFavorited ? 'active' : 'inactive' }}" data-article-id="{{$article->id}}">
                    <i class="{{ $isFavorited ? 'fas fa-heart' : 'far fa-heart' }}"></i>
               </button>
-              <span>{{ $article->favorites_count }}</span>
-            </form>
+              <span class="favorite-count">{{ $article->favorites_count }}</span>
           @endif
 
 
@@ -86,32 +80,52 @@
          @auth('instructor')
            {{-- 講師の場合は自分の記事だけ --}}
            @if($article->instructor_id === auth('instructor')->id())
-              <p>{{ $article->favorites_count }}</p>
+            <div class="d-flex align-items-center">
+              <i class="fas fa-heart text-danger me-1"></i>
+              <p class="font-size: 50px;">{{ $article->favorites_count }}</p>
+            </div>
            @endif
           @endauth
 
          @auth('admin')
         {{-- 管理者は全記事に表示 --}}
-          <p>{{ $article->favorites_count }}</p>
+            <div class="d-flex align-items-center">
+              <i class="fas fa-heart text-danger me-1"></i>
+              <p class="font-size: 50px;">{{ $article->favorites_count }}</p>
+            </div>
          @endauth
-        </div>
 
-     @if(auth()->guard('user')->check())
+         <div class="mx-3"></div>
+         
+         @if(auth()->guard('user')->check())
          @php
-           $completed = $article->readers->contains(auth()->id());
-        @endphp
-
-        @if(!$completed)
-          <form method="POST" action="{{ route('articles.complete', $article->id) }}">
+         $reader = $article->readers->firstWhere('id', auth()->id());
+         $completed = $reader ? $reader->pivot->completed : false;
+         @endphp
+         
+         @if(!$completed)
+         <form method="POST" action="{{ route('articles.complete', $article->id) }}">
             @csrf
             <button type="submit" class="btn btn-success">修了する</button>
           </form>
-        @else
-          <span class="text-success">✔ 修了済み</span>
+         @else
+           <span class="text-success">✔ 修了済み</span>
+         @endif
         @endif
-    @endif
+      </div>
+  </div>
 
     <br>
+
+  <div class="mt-2">
+    @if($article->faceType)
+      <span class="badge bg-secondary-subtle">{{$article->faceType->name}}</span>
+    @endif
+    @if($article->personalColor)
+      <span class="badge bg-secondary-subtle">{{ $article->personalColor->name }}</span>
+    @endif
+  </div>
+    
     
           {{-- 本文・画像 --}}
           <div class ="content row mb-4">
@@ -129,7 +143,6 @@
 
           {{-- Youtube --}}
           @if($article->youtube_video_id)
-             <h4>動画</h4>
              <iframe width="560" height="315"
                 src="https://www.youtube.com/embed/{{ $article->youtube_video_id }}"
                 frameborder="0" allowfullscreen>
@@ -236,6 +249,20 @@
                   </div>
                 </div>
 
+                {{-- ▼ フォーム：初期状態は非表示 --}}
+                <div id="reply-form-{{ $comment->id }}" style="display: none;" class="ms-4 mt-2">  
+                    <form action="{{ route('instructor.comments.reply',$comment->id) }}" method="POST">
+                        @csrf
+                        <div class="mb-2">
+                            <label for="content-{{ $comment->id }}">返信内容</label>
+                            <textarea name="content" id="content-{{ $comment->id }}" class="form-control" rows="2" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-primary">返信する</button>
+                    </form>
+                </div>
+                @endif
+                @endauth
+
             {{-- 返信数リンク --}}
             @if ($comment->replies->count() > 0)
              <div class="text-start mt-2">
@@ -263,21 +290,7 @@
                     </div>
                 @endforeach
             </div>
-
-
-    {{-- ▼ フォーム：初期状態は非表示 --}}
-    <div id="reply-form-{{ $comment->id }}" style="display: none;" class="ms-4 mt-2">  
-        <form action="{{ route('instructor.comments.reply',$comment->id) }}" method="POST">
-            @csrf
-            <div class="mb-2">
-                <label for="content-{{ $comment->id }}">返信内容</label>
-                <textarea name="content" id="content-{{ $comment->id }}" class="form-control" rows="2" required></textarea>
-            </div>
-            <button type="submit" class="btn btn-sm btn-primary">返信する</button>
-        </form>
-    </div>
-    @endif
-   @endauth
+            
 </div>
     @empty
         <p>まだコメントがありません。</p>
@@ -302,5 +315,41 @@
     }
 }
 </script>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('.favorite-btn').click(function() {
+        const btn = $(this);
+        const articleId = btn.data('article-id');
+
+        $.ajax({
+            url: '/favorites/toggle/' + articleId,
+            type: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                // ハートアイコン切替
+                if (btn.hasClass('active')) {
+                    btn.removeClass('active').addClass('inactive');
+                    btn.find('i').removeClass('fas').addClass('far');
+                } else {
+                    btn.removeClass('inactive').addClass('active');
+                    btn.find('i').removeClass('far').addClass('fas');
+                }
+
+                // お気に入り数更新
+                btn.siblings('.favorite-count').text(response.favorites_count);
+            },
+            error: function(err) {
+                alert('お気に入りの更新に失敗しました');
+            }
+        });
+    });
+});
 </script>
+
+
+
 @endsection
